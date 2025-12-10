@@ -37,7 +37,7 @@
             font-size: 16px; font-weight: bold; margin-bottom: 10px; 
             text-align: center; padding: 8px; border-radius: 3px; 
         }
-        .column-header.green { background-color: #44ff44; color: #1a1a1a; }
+        .column-header.black { background-color: #44ff44; color: #1a1a1a; }
         .column-header.blue { background-color: #4488ff; color: #1a1a1a; }
         .column-header.red { background-color: #ff4444; color: #1a1a1a; }
         
@@ -55,7 +55,7 @@
             padding: 2px 5px; border-radius: 6px; font-size: 9px; 
             font-weight: bold; text-transform: uppercase; margin-right: 5px;
         }
-        .marker.green { background-color: #44ff44; color: #1a1a1a; }
+        .marker.black { background-color: #44ff44; color: #1a1a1a; }
         .marker.blue { background-color: #4488ff; color: #1a1a1a; }
         .marker.red { background-color: #ff4444; color: #1a1a1a; }
         
@@ -83,8 +83,8 @@
 
         <div class="user-list-container">
             <div class="color-column">
-                <div class="column-header green">Зелёные (0)</div>
-                <ul class="user-list" id="greenList"></ul>
+                <div class="column-header black">Чёрные (0)</div>
+                <ul class="user-list" id="blackList"></ul>
             </div>
             <div class="color-column">
                 <div class="column-header blue">Синие (0)</div>
@@ -105,13 +105,13 @@
     <script>
         let markers = {};
 
-        const greenList = document.getElementById('greenList');
+        const blackList = document.getElementById('blackList');
         const blueList = document.getElementById('blueList');
         const redList = document.getElementById('redList');
         const jsonOutput = document.getElementById('jsonOutput');
         const copyBtn = document.getElementById('copyBtn');
         const headers = {
-            green: document.querySelector('.column-header.green'),
+            black: document.querySelector('.column-header.black'),
             blue: document.querySelector('.column-header.blue'),
             red: document.querySelector('.column-header.red')
         };
@@ -119,9 +119,9 @@
         // ✅ ЗАГРУЗКА ИЗ 3 JSON ФАЙЛОВ
         async function loadData() {
             try {
-                // Загружаем green.json
-                const greenResponse = await fetch('green.json');
-                const greenData = await greenResponse.json();
+                // Загружаем black.json
+                const blackResponse = await fetch('black.json');
+                const blackData = await blackResponse.json();
                 
                 // Загружаем blue.json
                 const blueResponse = await fetch('blue.json');
@@ -133,7 +133,7 @@
 
                 // Формируем полный markers объект
                 markers = {
-                    ...greenData,
+                    ...blackData,
                     ...blueData,
                     ...redData
                 };
@@ -148,21 +148,21 @@
         }
 
         function renderUserList() {
-            greenList.innerHTML = ''; blueList.innerHTML = ''; redList.innerHTML = '';
+            blackList.innerHTML = ''; blueList.innerHTML = ''; redList.innerHTML = '';
 
-            const greenUsers = [], blueUsers = [], redUsers = [];
+            const blackUsers = [], blueUsers = [], redUsers = [];
 
             Object.entries(markers).forEach(([id, color]) => {
-                if (color === 'green') greenUsers.push([id, color]);
+                if (color === 'black') blackUsers.push([id, color]);
                 if (color === 'blue') blueUsers.push([id, color]);
                 if (color === 'red') redUsers.push([id, color]);
             });
 
-            greenUsers.forEach(([id, color]) => greenList.appendChild(createItem(id, color)));
+            blackUsers.forEach(([id, color]) => blackList.appendChild(createItem(id, color)));
             blueUsers.forEach(([id, color]) => blueList.appendChild(createItem(id, color)));
             redUsers.forEach(([id, color]) => redList.appendChild(createItem(id, color)));
 
-            headers.green.textContent = `Зелёные (${greenUsers.length})`;
+            headers.black.textContent = `Чёрные (${blackUsers.length})`;
             headers.blue.textContent = `Синие (${blueUsers.length})`;
             headers.red.textContent = `Красные (${redUsers.length})`;
         }
