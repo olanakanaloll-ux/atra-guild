@@ -13,7 +13,7 @@
             padding: 20px; 
             line-height: 1.4; 
         }
-        .container { max-width: 1200px; margin: 0 auto; }
+        .container { max-width: 1600px; margin: 0 auto; }
         h1 { text-align: center; color: #ff4444; margin-bottom: 20px; font-size: 1.8em; }
         
         .copy-section { text-align: center; margin-bottom: 20px; }
@@ -26,9 +26,18 @@
         .copy-success { background-color: #44ff44 !important; }
         
         .user-list-container { 
-            display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; 
+            display: grid; 
+            grid-template-columns: repeat(5, 1fr); 
+            gap: 15px; 
             margin-bottom: 30px; 
         }
+        @media (max-width: 1200px) {
+            .user-list-container { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .user-list-container { grid-template-columns: 1fr; }
+        }
+        
         .color-column { 
             background-color: #2a2a2a; border: 1px solid #444; 
             border-radius: 4px; padding: 15px; 
@@ -40,6 +49,8 @@
         .column-header.black { background-color: #44ff44; color: #1a1a1a; }
         .column-header.blue { background-color: #4488ff; color: #1a1a1a; }
         .column-header.red { background-color: #ff4444; color: #1a1a1a; }
+        .column-header.yellow { background-color: #ffd700; color: #1a1a1a; }
+        .column-header.green { background-color: #4CAF50; color: #1a1a1a; }
         
         .user-list { list-style: none; }
         .user-item { 
@@ -58,6 +69,8 @@
         .marker.black { background-color: #44ff44; color: #1a1a1a; }
         .marker.blue { background-color: #4488ff; color: #1a1a1a; }
         .marker.red { background-color: #ff4444; color: #1a1a1a; }
+        .marker.yellow { background-color: #ffd700; color: #1a1a1a; }
+        .marker.green { background-color: #4CAF50; color: #1a1a1a; }
         
         .json-section { 
             background-color: #2a2a2a; border: 1px solid #444; 
@@ -71,24 +84,62 @@
         }
 
         .loading { text-align: center; color: #888; }
+        
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px;
+            background-color: #2a2a2a;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-value {
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #aaa;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Список пользователей</h1>
+        <h1>Список пользователей по цветам</h1>
         
         <div class="copy-section">
-            <button class="copy-json-btn" onclick="copyJSON()" id="copyBtn">📋 Копировать JSON</button>
+            <button class="copy-json-btn" onclick="copyJSON()" id="copyBtn">📋 Копировать полный JSON</button>
+        </div>
+        
+        <div class="stats" id="stats">
+            <div class="stat-item"><div class="stat-value">0</div><div class="stat-label">Всего</div></div>
+            <div class="stat-item"><div class="stat-value">0</div><div class="stat-label">Синие</div></div>
+            <div class="stat-item"><div class="stat-value">0</div><div class="stat-label">Желтые</div></div>
+            <div class="stat-item"><div class="stat-value">0</div><div class="stat-label">Зеленые</div></div>
+            <div class="stat-item"><div class="stat-value">0</div><div class="stat-label">Черные</div></div>
+            <div class="stat-item"><div class="stat-value">0</div><div class="stat-label">Красные</div></div>
         </div>
 
         <div class="user-list-container">
             <div class="color-column">
-                <div class="column-header black">Чёрные (0)</div>
-                <ul class="user-list" id="blackList"></ul>
-            </div>
-            <div class="color-column">
                 <div class="column-header blue">Синие (0)</div>
                 <ul class="user-list" id="blueList"></ul>
+            </div>
+            <div class="color-column">
+                <div class="column-header yellow">Желтые (0)</div>
+                <ul class="user-list" id="yellowList"></ul>
+            </div>
+            <div class="color-column">
+                <div class="column-header green">Зеленые (0)</div>
+                <ul class="user-list" id="greenList"></ul>
+            </div>
+            <div class="color-column">
+                <div class="column-header black">Черные (0)</div>
+                <ul class="user-list" id="blackList"></ul>
             </div>
             <div class="color-column">
                 <div class="column-header red">Красные (0)</div>
@@ -105,66 +156,96 @@
     <script>
         let markers = {};
 
-        const blackList = document.getElementById('blackList');
         const blueList = document.getElementById('blueList');
+        const yellowList = document.getElementById('yellowList');
+        const greenList = document.getElementById('greenList');
+        const blackList = document.getElementById('blackList');
         const redList = document.getElementById('redList');
+        
         const jsonOutput = document.getElementById('jsonOutput');
         const copyBtn = document.getElementById('copyBtn');
+        
         const headers = {
-            black: document.querySelector('.column-header.black'),
             blue: document.querySelector('.column-header.blue'),
+            yellow: document.querySelector('.column-header.yellow'),
+            green: document.querySelector('.column-header.green'),
+            black: document.querySelector('.column-header.black'),
             red: document.querySelector('.column-header.red')
         };
 
-        // ✅ ЗАГРУЗКА ИЗ 3 JSON ФАЙЛОВ
+        const statValues = document.querySelectorAll('.stat-value');
+
+        // ✅ ЗАГРУЗКА ИЗ 5 JSON ФАЙЛОВ
         async function loadData() {
             try {
-                // Загружаем black.json
-                const blackResponse = await fetch('black.json');
-                const blackData = await blackResponse.json();
-                
-                // Загружаем blue.json
-                const blueResponse = await fetch('blue.json');
-                const blueData = await blueResponse.json();
-                
-                // Загружаем red.json
-                const redResponse = await fetch('red.json');
-                const redData = await redResponse.json();
+                // Загружаем все JSON файлы параллельно
+                const [blueResponse, yellowResponse, greenResponse, blackResponse, redResponse] = await Promise.all([
+                    fetch('blue.json').then(r => r.json()),
+                    fetch('yellow.json').then(r => r.json()),
+                    fetch('green.json').then(r => r.json()),
+                    fetch('black.json').then(r => r.json()),
+                    fetch('red.json').then(r => r.json())
+                ]);
 
                 // Формируем полный markers объект
                 markers = {
-                    ...blackData,
-                    ...blueData,
-                    ...redData
+                    ...blueResponse,
+                    ...yellowResponse,
+                    ...greenResponse,
+                    ...blackResponse,
+                    ...redResponse
                 };
 
                 renderUserList();
                 renderJSON();
                 
             } catch (error) {
-                jsonOutput.textContent = '❌ Ошибка загрузки JSON файлов';
+                jsonOutput.textContent = '❌ Ошибка загрузки JSON файлов: ' + error.message;
                 console.error('Ошибка загрузки:', error);
             }
         }
 
         function renderUserList() {
-            blackList.innerHTML = ''; blueList.innerHTML = ''; redList.innerHTML = '';
+            // Очищаем списки
+            blueList.innerHTML = '';
+            yellowList.innerHTML = '';
+            greenList.innerHTML = '';
+            blackList.innerHTML = '';
+            redList.innerHTML = '';
 
-            const blackUsers = [], blueUsers = [], redUsers = [];
+            // Группируем пользователей по цветам
+            const blueUsers = [], yellowUsers = [], greenUsers = [], blackUsers = [], redUsers = [];
 
             Object.entries(markers).forEach(([id, color]) => {
-                if (color === 'black') blackUsers.push([id, color]);
                 if (color === 'blue') blueUsers.push([id, color]);
-                if (color === 'red') redUsers.push([id, color]);
+                else if (color === 'yellow') yellowUsers.push([id, color]);
+                else if (color === 'green') greenUsers.push([id, color]);
+                else if (color === 'black') blackUsers.push([id, color]);
+                else if (color === 'red') redUsers.push([id, color]);
             });
 
-            blackUsers.forEach(([id, color]) => blackList.appendChild(createItem(id, color)));
+            // Добавляем пользователей в соответствующие списки
             blueUsers.forEach(([id, color]) => blueList.appendChild(createItem(id, color)));
+            yellowUsers.forEach(([id, color]) => yellowList.appendChild(createItem(id, color)));
+            greenUsers.forEach(([id, color]) => greenList.appendChild(createItem(id, color)));
+            blackUsers.forEach(([id, color]) => blackList.appendChild(createItem(id, color)));
             redUsers.forEach(([id, color]) => redList.appendChild(createItem(id, color)));
 
-            headers.black.textContent = `Чёрные (${blackUsers.length})`;
+            // Обновляем заголовки с количеством
             headers.blue.textContent = `Синие (${blueUsers.length})`;
+            headers.yellow.textContent = `Желтые (${yellowUsers.length})`;
+            headers.green.textContent = `Зеленые (${greenUsers.length})`;
+            headers.black.textContent = `Черные (${blackUsers.length})`;
             headers.red.textContent = `Красные (${redUsers.length})`;
+
+            // Обновляем статистику
+            const total = Object.keys(markers).length;
+            statValues[0].textContent = total;
+            statValues[1].textContent = blueUsers.length;
+            statValues[2].textContent = yellowUsers.length;
+            statValues[3].textContent = greenUsers.length;
+            statValues[4].textContent = blackUsers.length;
+            statValues[5].textContent = redUsers.length;
         }
 
         function createItem(id, color) {
@@ -172,8 +253,8 @@
             li.className = 'user-item';
             li.innerHTML = `
                 <div class="user-info">
-                    <span class="user-id">${id}</span>
                     <span class="marker ${color}">${color}</span>
+                    <span class="user-id">${id}</span>
                 </div>
             `;
             return li;
@@ -189,7 +270,7 @@
                 copyBtn.textContent = '✅ Скопировано!';
                 copyBtn.classList.add('copy-success');
                 setTimeout(() => {
-                    copyBtn.textContent = '📋 Копировать JSON';
+                    copyBtn.textContent = '📋 Копировать полный JSON';
                     copyBtn.classList.remove('copy-success');
                 }, 2000);
             });
